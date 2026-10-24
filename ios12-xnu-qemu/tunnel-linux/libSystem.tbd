@@ -1,0 +1,9 @@
+--- !tapi-tbd
+tbd-version:     4
+targets:         [ arm64-ios ]
+install-name:    '/usr/lib/libSystem.B.dylib'
+current-version: 1252.200.5
+exports:
+  - targets:         [ arm64-ios ]
+    symbols:         [ ___error, ___stderrp, ___stdoutp, ___stdinp, _accept, _bind, _close, _connect, _exit, _fcntl, _fork, _fprintf, _inet_pton, _listen, _memset, _printf, _recv, _send, _sigaction, _socket, _strncmp, _strncpy, _strtok, _strtoul, _usleep, dyld_stub_binder ]
+...

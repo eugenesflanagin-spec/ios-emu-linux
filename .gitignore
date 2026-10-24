@@ -1,0 +1,17 @@
+# Never commit Apple firmware, kernels, images or build output
+*.ipsw
+*.im4p
+*.img4
+*.dmg
+*.out
+*.bin
+*.zip
+*.page
+hfs.*
+build/
+files/
+logs/
+qemu/
+src*/
+*.o
+tunnel-linux/tunnel
