@@ -8,6 +8,7 @@ pkgbase = qemu-apple-t8030-git
 	license = AGPL-3.0-only
 	license = MIT
 	makedepends = git
+	makedepends = meson
 	makedepends = ninja
 	makedepends = lzfse
 	depends = alsa-lib

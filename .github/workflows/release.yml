@@ -113,7 +113,8 @@ jobs:
         run: |
           notes="packaging/release-notes/$TAG.md"
           [ -f "$notes" ] || { echo "::error::$notes is missing; write the release notes first"; exit 1; }
-          if gh release view "$TAG" >/dev/null 2>&1; then
+          # (the API list includes drafts, so a release being prepared by hand counts too)
+          if gh api "repos/$GH_REPO/releases" --paginate -q '.[].tag_name' | grep -qxF "$TAG"; then
             # Never overwrite files people may already have downloaded.
             echo "::notice::release $TAG already exists; leaving it as it is (this run was a build + test check)"
             exit 0

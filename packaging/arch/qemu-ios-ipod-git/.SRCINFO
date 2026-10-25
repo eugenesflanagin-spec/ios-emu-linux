@@ -26,6 +26,7 @@ pkgbase = qemu-ios-ipod-git
 	provides = qemu-ios-ipod
 	conflicts = qemu-ios-ipod
 	options = !lto
+	options = !debug
 	source = qemu-ios::git+https://github.com/devos50/qemu-ios.git#branch=ipod_touch_1g
 	source = keycodemapdb::git+https://gitlab.com/qemu-project/keycodemapdb.git
 	source = berkeley-softfloat-3::git+https://gitlab.com/qemu-project/berkeley-softfloat-3.git

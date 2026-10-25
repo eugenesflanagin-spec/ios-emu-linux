@@ -26,12 +26,13 @@ optdepends=('hfsprogs: repair hfs.sec before each boot (fsck.hfsplus)'
 provides=("$_pkgname")
 conflicts=("$_pkgname")
 options=('!lto' '!debug')
-_extras_commit=54ce8edd939ad79bb0e9c9570a5f3389e17163cc
+# Docs and the tcp-tunnel source come from this release of ios-emu-linux
+_extras_tag=v1.0
 source=("$_pkgname::git+https://github.com/alephsecurity/xnu-qemu-arm64.git"
         "keycodemapdb::git+https://gitlab.com/qemu-project/keycodemapdb.git"
         "berkeley-softfloat-3::git+https://gitlab.com/qemu-project/berkeley-softfloat-3.git"
         "berkeley-testfloat-3::git+https://gitlab.com/qemu-project/berkeley-testfloat-3.git"
-        "ios-emu-linux::git+https://github.com/eugenesflanagin-spec/ios-emu-linux.git#commit=$_extras_commit"
+        "ios-emu-linux::git+https://github.com/eugenesflanagin-spec/ios-emu-linux.git#tag=$_extras_tag"
         '0001-n66-32bpp-xnu-ramfb-linux-host-guest-services.patch'
         'xnu-qemu-ios'
         'xnu-qemu-ios-console'
@@ -42,7 +43,7 @@ sha256sums=('SKIP'
             'SKIP'
             'SKIP'
             'SKIP'
-            'cf432725431ca83ef59a353b938b90842eac80011ba048ad0b1310c49b32faef'
+            'SKIP'
             'c17621c9c91f0d278535884020e18b27bad5b7fbce54b4c137cdfd7aba72d1d5'
             '93fdf9b81e3e893fc017014885cd067ec38d2b26ee6e6891c8b400768d9bc143'
             'd9ecba4bc413506306752aabe279669759a974adba6d9d2087c4405b26fa0a65'
