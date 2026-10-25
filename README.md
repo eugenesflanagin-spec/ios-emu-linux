@@ -4,6 +4,8 @@ Getting Apple's iOS running under QEMU on a **Linux** host (tested on Arch/Garud
 Ryzen 7800X3D). This repo holds the launch scripts, notes and small patches. It contains **no Apple
 firmware, kernels, bootroms or disk images**: you fetch those yourself (see each folder's README).
 
+**New here? Start with [GUIDE.md](GUIDE.md)**: which emulator to pick, what PC you need, setup overview, controls, troubleshooting and a glossary.
+
 | Folder | What | Status |
 |---|---|---|
 | [`ios12-xnu-qemu/`](ios12-xnu-qemu/) | iOS 12.1 on an emulated iPhone 6s Plus, using [alephsecurity/xnu-qemu-arm64](https://github.com/alephsecurity/xnu-qemu-arm64) | ✅ boots to a root shell; kernel console in a window; SSH from the host. No home screen (the fork has no display/GPU/touch emulation) |
