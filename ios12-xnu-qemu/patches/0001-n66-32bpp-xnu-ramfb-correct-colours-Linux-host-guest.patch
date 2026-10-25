@@ -10,7 +10,6 @@ Subject: [PATCH] n66: 32bpp xnu-ramfb (correct colours) + Linux-host
   (sa_len + 8-bit family), O_NONBLOCK/O_APPEND fcntl flags, errno values,
   init accept() addrlen, and make accepted sockets inherit O_NONBLOCK (BSD)
 
-Co-Authored-By: Claude Opus 5.5 (1M context) <noreply@anthropic.com>
 ---
  hw/arm/guest-fds.c          | 18 ++++++++++
  hw/arm/guest-services.c     | 37 +++++++++++++++++++

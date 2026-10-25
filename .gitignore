@@ -15,3 +15,18 @@ qemu/
 src*/
 *.o
 tunnel-linux/tunnel
+
+# makepkg output and source clones in packaging/arch/<pkg>/
+packaging/arch/*/src/
+packaging/arch/*/pkg/
+packaging/arch/*/*.pkg.tar.*
+packaging/arch/*/*.src.tar.*
+packaging/arch/*/*.log
+packaging/arch/*/keycodemapdb/
+packaging/arch/*/mlib/
+packaging/arch/*/berkeley-*/
+packaging/arch/*/t8030-src/
+packaging/arch/*/qemu-ios/
+packaging/arch/*/xnu-qemu-arm64/
+packaging/arch/*/ios-emu-linux/
+out/

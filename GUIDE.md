@@ -53,13 +53,55 @@ on your CPU and RAM. Your graphics card isn't used.
 
 ---
 
-## 3. Setting up the iPhone 11 (iOS 14)
+## 3. Installing the emulators (the easy way, on Arch Linux)
+
+You don't have to build the emulators yourself any more. Each one is packaged for **Arch Linux** and the distributions
+based on it (Garuda, EndeavourOS, CachyOS, Manjaro). On other distributions, build from source as the per-emulator
+sections below describe.
+
+**What a package gives you:** the emulator, a launcher command, a menu entry, and the notes. Each one installs into
+its own folder under `/opt`, so it **sits beside** your normal `qemu` and never replaces or breaks it.
+**What it doesn't give you:** any Apple files. Those you still prepare yourself, as sections 4-6 explain.
+
+| Package | Emulates | Start it with | Put your files in |
+|---|---|---|---|
+| `qemu-apple-t8030-git` | iPhone 11, iOS 14 (Inferno) | `qemu-apple-t8030` or menu "QEMU t8030" | `~/.local/share/qemu-apple-t8030/` (`data/` + `vm-args.sh`) |
+| `qemu-ios-ipod-git` | iPod touch 1G, iPhoneOS 1.0 | `ipod-touch-qemu` or menu "iPod touch 1G" | `~/.local/share/qemu-ios-ipod/` (the 4 system files) |
+| `xnu-qemu-arm64-git` | iOS 12.1 text shell, iPhone 6s Plus | `xnu-qemu-ios` (window), `xnu-qemu-ios-console`, `xnu-qemu-ios-ssh` | `~/.local/share/xnu-qemu-arm64/` (the 5 prepared files) |
+
+**Three ways to install** (they all end in the same package):
+
+1. **AUR** (simplest if you already use an AUR helper):
+   ```
+   yay -S qemu-apple-t8030-git        # or qemu-ios-ipod-git, xnu-qemu-arm64-git
+   ```
+   This compiles the emulator on your PC. Expect 10-30 minutes for each one.
+2. **Ready-made package** from the [Releases page](https://github.com/eugenesflanagin-spec/ios-emu-linux/releases)
+   (no compiling). Download the `.pkg.tar.zst` file(s) you want and `SHA256SUMS` into one folder, then in that folder:
+   ```
+   sha256sum -c SHA256SUMS --ignore-missing      # every file you downloaded must say OK
+   sudo pacman -U ./qemu-apple-t8030-git-*.pkg.tar.zst
+   ```
+   These were built in a clean Arch container with Arch's standard settings, so they run on any x86-64 PC.
+3. **Build from this repo:** `cd packaging/arch/qemu-apple-t8030-git && makepkg -si`. The iPhone package needs
+   [`lzfse`](https://aur.archlinux.org/packages/lzfse) from the AUR first.
+
+**First run:** start the command once before you've set anything up. It doesn't crash; it tells you exactly which
+files it's missing and which folder it looked in. The iPhone and iOS 12 packages also install their notes in
+`/usr/share/doc/<package>/`; the iPod launcher prints its own instructions.
+
+**Removing:** `sudo pacman -R qemu-apple-t8030-git` (and so on). Your files in `~/.local/share/...` are left alone.
+
+---
+
+## 4. Setting up the iPhone 11 (iOS 14)
 
 Follow the official guide at **[chefkiss.dev → AppleHax → Inferno](https://chefkiss.dev/applehax/inferno/)** in order.
 These are its stages in plain words, with the tips we needed on Linux. More detail is in
 [`iphone11-qemuapplesilicon/README.md`](iphone11-qemuapplesilicon/README.md).
 
-1. **Host setup: build the emulator.**
+1. **Host setup: build the emulator.** With the `qemu-apple-t8030-git` package (section 3) this step is done:
+   skip to step 2. If you build it yourself:
    - Build with **gcc**. clang/aocc trip over an LTO-built library.
    - Run `git submodule update --init` first.
    - **Keep debug info on** (`-Ddebug=true`). Turning it off silently removes code the emulator needs, and the
@@ -103,11 +145,15 @@ qemu-img snapshot -a after-setup root.qcow2      # roll back
 
 ### Using it
 
-Start it with `run-iphone.sh`, or with `run-iphone.sh --companion` if you want internet.
+Start it with `run-iphone.sh`, or with `run-iphone.sh --companion` if you want internet. With the package, the same
+launcher is installed as `qemu-apple-t8030` (`qemu-apple-t8030 --help` lists its options). It reads your machine
+settings from `~/.local/share/qemu-apple-t8030/vm-args.sh`; copy
+`/usr/share/doc/qemu-apple-t8030-git/vm-args.example.sh` there and change the file names to yours. The helper VM
+for internet isn't part of the package: `--companion` starts your own `companion.sh` from that folder.
 - The window opens at 0.65× size (about 85% of a 1440p screen tall), centred, with sharp text.
 - Use View → Zoom in the window's menu to change the size.
-- Boot takes about 2.5 minutes. The first picture you see is the boot splash. `tools/set-boot-splash.sh` swaps it
-  for any picture you like, or for your GitHub avatar.
+- Boot takes about 2.5 minutes. The first picture you see is the boot splash. `tools/set-boot-splash.sh`
+  (`qemu-apple-t8030-set-boot-splash` in the package) swaps it for any picture you like, or for your GitHub avatar.
 
 | Input | iPhone button |
 |---|---|
@@ -136,12 +182,14 @@ self-built `.app`, fake-signed with `ldid`, is copied to `/Applications` and reg
 
 ---
 
-## 4. Setting up the iPod touch 1G (the quick one)
+## 5. Setting up the iPod touch 1G (the quick one)
 
-1. Build devos50's `qemu-ios` (branch `ipod_touch_1g`) with **gcc**.
+1. Install the `qemu-ios-ipod-git` package (section 3), or build devos50's `qemu-ios` (branch `ipod_touch_1g`)
+   yourself with **gcc**.
 2. Download the four system files from the project's own release `n45ap_v1`. The sha256 checksums are in
-   [`ipod-touch-1g/README.md`](ipod-touch-1g/README.md).
-3. Run `run-ipod.sh`.
+   [`ipod-touch-1g/README.md`](ipod-touch-1g/README.md). With the package, put them in `~/.local/share/qemu-ios-ipod/`
+   and leave `nand_n45ap.zip` zipped.
+3. Run `ipod-touch-qemu` (package) or `run-ipod.sh` (your own build).
    - It unpacks the NAND into RAM, because the image is about 133,000 tiny files and that's painfully slow on a
      hard drive.
    - It forces native Wayland.
@@ -152,18 +200,22 @@ the device never wakes from sleep. Changes aren't kept between boots; that's how
 
 ---
 
-## 5. Setting up the iOS 12 shell
+## 6. Setting up the iOS 12 shell
 
 This is for people who want to poke at iOS from a terminal. It never shows a home screen.
-1. Build Aleph's `xnu-qemu-arm64` **with the patches in [`ios12-xnu-qemu/patches/`](ios12-xnu-qemu/patches/)**.
+1. Install the `xnu-qemu-arm64-git` package (section 3; the Linux patches are already in it), or build Aleph's
+   `xnu-qemu-arm64` yourself **with the patches in [`ios12-xnu-qemu/patches/`](ios12-xnu-qemu/patches/)**.
    They fix the networking layer for a Linux host and the console display format.
-2. Follow Aleph's own instructions to prepare the iOS 12.1 files.
-3. `run-ios.sh` shows the kernel console in a window. `ssh-ios.sh` connects over SSH through the tunnel that
-   `tunnel-linux/` cross-builds without Xcode.
+2. Follow Aleph's own instructions to prepare the iOS 12.1 files. [`ios12-xnu-qemu/README.md`](ios12-xnu-qemu/README.md)
+   lists the Linux replacements for the guide's macOS-only steps. With the package, put the five finished files in
+   `~/.local/share/xnu-qemu-arm64/`.
+3. `xnu-qemu-ios` (package) or `run-ios.sh` shows the kernel console in a window; this terminal is the keyboard.
+   `xnu-qemu-ios-ssh` or `ssh-ios.sh` connects over SSH through the tunnel that `tunnel-linux/` cross-builds without
+   Xcode (the package installs that source in `/usr/share/doc/xnu-qemu-arm64-git/tunnel-linux/`).
 
 ---
 
-## 6. Troubleshooting
+## 7. Troubleshooting
 
 | What you see | Likely cause | Fix |
 |---|---|---|
@@ -176,10 +228,16 @@ This is for people who want to poke at iOS from a terminal. It never shows a hom
 | "Swipe up" setup screen won't respond | known quirk | hold F4 then F5, slide to power off, boot again |
 | Phone has no internet | started without `--companion`, or tethering not set up | start with `--companion`; see guide page "Reverse Tethering" |
 | iPod screen frozen black | it went to sleep | close the window and relaunch (it can't wake) |
+| A package command says files are missing | nothing set up yet, or files in the wrong folder | put them in the folder it names (see section 3); `--help` shows the options |
+| `qemu-apple-t8030`: "No VM set up yet" | `data/` or `vm-args.sh` missing in `~/.local/share/qemu-apple-t8030/` | copy `vm-args.example.sh` there and fix the file names, or set `QEMU_T8030_DIR` to your existing folder |
+| Building the iPhone package fails: `lzfse` not found | it's only in the AUR | install `lzfse` from the AUR first (an AUR helper does this for you) |
+| `pacman -U` says the file is corrupted | incomplete download | download it again and check it with `sha256sum -c SHA256SUMS --ignore-missing` |
+| Menu entry starts but nothing appears | the launcher stopped with a message you can't see | run the command in a terminal to read the message |
+| iPod window never appears on X11 | SDL hang on X11 (sdl2-compat) | use a Wayland session; the launcher picks Wayland automatically when it's there |
 
 ---
 
-## 7. Glossary
+## 8. Glossary
 
 - **QEMU:** the open-source program that pretends to be a whole computer (here, an iPhone or iPod).
 - **IPSW:** Apple's iOS firmware file, the same one iTunes or Finder uses to restore a real iPhone.
@@ -193,3 +251,9 @@ This is for people who want to poke at iOS from a terminal. It never shows a hom
 - **TCG:** QEMU's software CPU emulation. It's what makes the iPhone slow to boot, because there's no hardware shortcut.
 - **qcow2 snapshot:** a saved point inside the iPhone's disk file that you can roll back to.
 - **Splash:** the picture shown on screen before iOS starts drawing.
+- **Package (`.pkg.tar.zst`):** a ready-to-install bundle for Arch Linux's package manager, `pacman`.
+- **AUR (Arch User Repository):** a community collection of build recipes for Arch. An AUR helper like `yay`
+  downloads the recipe and compiles the program on your PC.
+- **PKGBUILD:** the build recipe inside an AUR package or in `packaging/arch/`.
+- **`-git` package:** builds the newest code from the project's git repository at the time you install it.
+- **SHA256SUMS:** a list of fingerprints for the release files, so you can check a download is complete and unchanged.

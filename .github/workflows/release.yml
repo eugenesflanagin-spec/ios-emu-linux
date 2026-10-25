@@ -1,0 +1,123 @@
+# Build, install-test and release the three Arch Linux packages.
+#
+# How it runs:
+#   * Push a tag like v1.1 -> builds all three packages (one job each), installs
+#     them in a fresh Arch container and tests them, and (only if every test
+#     passes) creates the GitHub release with the packages, their source
+#     tarballs (PKGBUILD + files) and SHA256SUMS attached. If a release for the
+#     tag already exists it is left untouched.
+#   * "Run workflow" button (or: gh workflow run release.yml --ref BRANCH)
+#     -> same builds and tests, no release: the files stay downloadable as
+#     "artifacts" on the workflow run page for a few days.
+#
+# Every step calls packaging/arch/container.sh, which you can also run on your
+# own PC (see packaging/README.md). No Apple files are used or downloaded:
+# the tests only start the emulators with --version / -machine help.
+#
+# These are -git packages: a run builds the newest upstream commit of each
+# emulator at that moment, and the package version shows which commit it was.
+
+name: Release packages
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+# By default the jobs may only read the repository. Only the final "release"
+# job gets permission to create releases (see below).
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # 1. Build each package in a fresh archlinux:base-devel container (makepkg -s,
+  #    so a missing dependency fails the build). QEMU builds take 20-60 minutes
+  #    on a free runner; aarch64/arm only, so disk use stays a few GB.
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        pkg: [qemu-ios-ipod-git, xnu-qemu-arm64-git, qemu-apple-t8030-git]
+    env:
+      PKG: ${{ matrix.pkg }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build ${{ matrix.pkg }}
+        run: packaging/arch/container.sh build "$PKG" out
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pkg-${{ matrix.pkg }}
+          path: out/
+          if-no-files-found: error
+
+  # 2. Install all three in ONE fresh container (proves they install side by
+  #    side) and run the checks in packaging/arch/container.sh.
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: pkg-*
+          merge-multiple: true
+          path: built/
+      - name: Install-test the packages
+        run: packaging/arch/container.sh test built
+      - name: Collect the release files and write SHA256SUMS
+        run: |
+          mkdir -p release
+          cp built/*.pkg.tar.zst built/*.src.tar.gz release/
+          rm -f release/*-debug-*.pkg.tar.zst
+          (cd release && sha256sum -- * > SHA256SUMS)
+          # 3 packages + 3 source tarballs + SHA256SUMS
+          n=$(find release -type f | wc -l); [ "$n" -eq 7 ] || { echo "::error::expected 7 release files, got $n"; ls -l release; exit 1; }
+          ls -l release; cat release/SHA256SUMS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-files
+          path: release/
+          if-no-files-found: error
+
+  # 3. Create the GitHub release. Only for tag pushes, and only after every
+  #    build and install test above has passed.
+  release:
+    if: github.ref_type == 'tag'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to create the release and upload files
+    env:
+      TAG: ${{ github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-files
+          path: release/
+      - name: Create the release
+        run: |
+          notes="packaging/release-notes/$TAG.md"
+          [ -f "$notes" ] || { echo "::error::$notes is missing; write the release notes first"; exit 1; }
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            # Never overwrite files people may already have downloaded.
+            echo "::notice::release $TAG already exists; leaving it as it is (this run was a build + test check)"
+            exit 0
+          fi
+          gh release create "$TAG" release/* --verify-tag \
+            --title "ios-emu-linux $TAG" --notes-file "$notes"
+          gh release view "$TAG" --json url,assets -q '.url, (.assets[] | .name)'
