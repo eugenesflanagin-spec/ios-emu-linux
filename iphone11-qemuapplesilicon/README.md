@@ -37,6 +37,10 @@ Never set a passcode, turn on Location Services, or use "Erase All Content and S
 - `run-iphone.sh`: launcher (GTK window `zoom-to-fit=on,show-cursor=on`; `--headless`; `--companion`). Expects the
   guide's data folder as `data/`, the build in `src/build/`, and your own `vm-args.sh`.
 - `vm-args.sh`: the run arguments used here (real SEP; the file paths point at your own local files).
+- `tools/set-boot-splash.sh`: swaps the picture Inferno shows before iOS starts for your own
+  (`set-boot-splash.sh picture.png`, `--github <user>` for your GitHub avatar, `--restore` for the original).
+  Fitted onto a black square, takes effect on the next boot, no rebuild. Inferno's `ui/icons/CKBrandingNotice.md`
+  says their artwork is © ChefKiss and modified builds must drop it, so this also de-brands a local build.
 
 ## Root shell, internet, apt and app installs
 <img src="screenshots/hellolinux-running.png" width="260" align="right">
