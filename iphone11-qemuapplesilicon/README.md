@@ -27,15 +27,22 @@ keys, images or setup automation**, only a launcher and the Linux-host notes bel
 - **ntfs3 hosts:** ntfs3 rejects symlink targets that end in `/`, so a couple of source-tree symlinks need creating by hand.
   qcow2 behaved better than raw for the root disk there.
 - **Buttons:** the first couple of key presses after boot are ignored (upstream #247), so tap F3 or F4 once first.
-  F6 = Home (twice = app switcher), F5 = side button. If the "Swipe up" setup screen won't respond: SOS (hold F4, then
+  F6 or middle click (with the patch) = Home (twice = app switcher), F5 = side button. If the "Swipe up" setup screen won't respond: SOS (hold F4, then
   F5), slide to power off, then boot again.
 
 ## Never
 Never set a passcode, turn on Location Services, or use "Erase All Content and Settings" (the last one bricks the install).
 
 ## Files
-- `run-iphone.sh`: launcher (GTK window `zoom-to-fit=on,show-cursor=on`; `--headless`; `--companion`). Expects the
-  guide's data folder as `data/`, the build in `src/build/`, and your own `vm-args.sh`.
+- `run-iphone.sh`: launcher. GTK window at `scale=0.65` with `zoom-to-fit=off` (about 1226 px tall, 85% of a 1440p
+  screen), centred on the primary monitor with kdotool since Wayland apps can't place themselves; `--headless`;
+  `--companion`. Expects the guide's data folder as `data/`, the build in `src/build/`, and your own `vm-args.sh`.
+  With `zoom-to-fit=on` the window can't be made smaller than the 828x1792 screen, so it overflows a 1440p monitor.
+  At 0.65 GTK shrinks with an averaging filter, so text stays clean (`screenshots/scale-065-text-compare.png`:
+  full size / 0.65 GTK / 0.65 nearest-neighbour).
+- `patches/0001-mt-spi-middle-click-home.patch`: makes the **middle mouse button a Home button** (sends F6; double click =
+  app switcher; never sends a tap). Apply in the Inferno tree and rebuild. A left-edge "back" swipe isn't possible on this
+  build, because iOS ignores screen-edge gestures here (upstream issue #53).
 - `vm-args.sh`: the run arguments used here (real SEP; the file paths point at your own local files).
 - `tools/set-boot-splash.sh`: swaps the picture Inferno shows before iOS starts for your own
   (`set-boot-splash.sh picture.png`, `--github <user>` for your GitHub avatar, `--restore` for the original).

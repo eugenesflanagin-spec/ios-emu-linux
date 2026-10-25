@@ -1,11 +1,18 @@
 #!/bin/bash
 # iPhone 11 (t8030) running iOS 14.0 beta 5 under ChefKiss Inferno (QEMU fork).
 #
-#   ./run-iphone.sh               normal boot in a GTK window (touch = mouse, keys below)
+#   ./run-iphone.sh               normal boot in a GTK window (touch = mouse, keys below).
+#                                 The window opens at 0.65x (538x1165 phone + menubar,
+#                                 ~1226 px tall = 85% of the 1440p main screen) and is
+#                                 moved to the centre of the primary monitor (kdotool).
+#                                 0.65x is drawn by cairo's box filter: sharp, no jaggies.
+#                                 View > Zoom In/Out/Best Fit changes it at run time.
 #   ./run-iphone.sh --companion   also start the companion VM first (USB link: needed for
 #                                 idevice* tools / reverse tethering; not needed for the GUI)
 #   ./run-iphone.sh --headless    no window (egl-headless); drive it with tools/qin.py
 #
+# Mouse:   left click/drag = finger | MIDDLE click = Home (same as F6; double = app switcher;
+#          patched multitouch device, see patches-local/0001-mt-spi-middle-click-home.patch)
 # Buttons: F1 force shutdown | F2 ringer | F3 vol- | F4 vol+ | F5 side/power | F6 Home
 #          F6 once = Home screen, F6 twice = app switcher,
 #          SOS / slide-to-power-off = hold F4, then ~0.5 s later also hold F5.
@@ -14,13 +21,15 @@
 # A normal boot reaches the lock/setup screen in ~2-3 minutes (pure TCG, software rendering).
 
 D="$(cd "$(dirname "$0")" && pwd)"
-DISPLAY_ARGS=(-display gtk,zoom-to-fit=on,show-cursor=on)
+SCALE=0.65   # 1792 * 0.65 = 1165 px of phone screen; 0.25..4 allowed
+DISPLAY_ARGS=(-display gtk,zoom-to-fit=off,show-cursor=on,scale=$SCALE)
+PLACE=1
 COMPANION=0
 for a in "$@"; do
   case "$a" in
     --companion) COMPANION=1 ;;
-    --headless) DISPLAY_ARGS=(-display egl-headless) ;;
-    -h|--help) sed -n 2,16p "$0"; exit 0 ;;
+    --headless) DISPLAY_ARGS=(-display egl-headless); PLACE=0 ;;
+    -h|--help) sed -n 2,21p "$0"; exit 0 ;;
   esac
 done
 
@@ -45,8 +54,30 @@ fi
 source "$D/vm-args.sh"   # sets Q, MAINARGS, cd's into data/
 mkdir -p "$D/logs"
 rm -f "$D/logs/mon-main.sock" "$D/logs/qmp-main.sock"
+# Wayland apps can't place their own window: once it appears, centre it on the
+# primary (priority 1) monitor.  Best effort; silently does nothing on failure.
+place_window() {
+  command -v kdotool >/dev/null || return
+  local w="" i geo
+  for i in $(seq 120); do
+    w=$(kdotool search --name 'iPhone 11 - iOS 14' 2>/dev/null | head -1); [ -n "$w" ] && break; sleep 0.5
+  done
+  [ -n "$w" ] || return
+  sleep 0.5
+  geo=$(kscreen-doctor -j 2>/dev/null | python3 -c '
+import json,sys
+o=[o for o in json.load(sys.stdin)["outputs"] if o.get("enabled")]
+o.sort(key=lambda o: o.get("priority") or 99)
+print(o[0]["pos"]["x"], o[0]["pos"]["y"], o[0]["size"]["width"], o[0]["size"]["height"])' 2>/dev/null)
+  [ -n "$geo" ] || geo="1920 0 2560 1440"
+  read -r ox oy ow oh <<<"$geo"
+  read -r ww wh < <(kdotool getwindowgeometry "$w" | awk '/Geometry/{split($2,a,"x"); print int(a[1]), int(a[2])}')
+  [ -n "$wh" ] || return
+  kdotool windowmove "$w" $((ox + (ow - ww) / 2)) $((oy + (oh - wh) / 2)) >/dev/null 2>&1
+}
+[ $PLACE = 1 ] && { place_window & }
 "$Q" -name "iPhone 11 - iOS 14 (Inferno)" "${MAINARGS[@]}" "${DISPLAY_ARGS[@]}" \
-  -serial "file:$D/logs/serial-main.log" \
+  -chardev "socket,id=ser0,path=$D/logs/serial-main.sock,server=on,wait=off,logfile=$D/logs/serial-main.log" -serial chardev:ser0 \
   -monitor "unix:$D/logs/mon-main.sock,server,nowait" \
   -qmp "unix:$D/logs/qmp-main.sock,server,nowait"
 rc=$?
