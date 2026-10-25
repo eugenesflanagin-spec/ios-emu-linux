@@ -25,6 +25,8 @@ The test only starts each emulator with `--version` and `-machine help`, checks 
 ## Making a release
 
 1. Write `packaging/release-notes/vX.Y.md`.
+   Also bump `_extras_tag` in `arch/xnu-qemu-arm64-git/PKGBUILD` to the new tag (that package takes its docs and
+   the tcp-tunnel source from it) and regenerate its `.SRCINFO` (`makepkg --printsrcinfo > .SRCINFO`).
 2. Commit, push, then `git tag vX.Y && git push origin vX.Y`.
 3. The workflow `.github/workflows/release.yml` builds the three packages, tests them, and creates the release with
    the packages, their source tarballs and `SHA256SUMS`. If a release for that tag already exists it is not touched.
