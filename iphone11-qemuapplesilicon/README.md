@@ -3,7 +3,8 @@
 ![home screen](screenshots/home-screen.png)
 
 **Status (2026-10-24):** iOS 14.0 beta 5 (18A5351d) gets to the **SpringBoard home screen**, with touch (the mouse),
-the hardware buttons (F-keys) and the stock apps working. The emulator is [ChefKissInc/Inferno](https://github.com/ChefKissInc/Inferno)
+the hardware buttons (F-keys) and the stock apps working. There's also a **root bash shell, internet via reverse tethering, apt,
+and a self-built app installed and running**. The emulator is [ChefKissInc/Inferno](https://github.com/ChefKissInc/Inferno)
 `master` @ cc4302a991 (formerly QEMUAppleSilicon), using a real emulated SEP. Rendering is in software, and a boot takes about 2.5 minutes.
 
 Follow the **official guide** (chefkiss.dev → AppleHax → Inferno) for setup. As that guide asks, this repo ships **no firmware,
@@ -36,3 +37,23 @@ Never set a passcode, turn on Location Services, or use "Erase All Content and S
 - `run-iphone.sh`: launcher (GTK window `zoom-to-fit=on,show-cursor=on`; `--headless`; `--companion`). Expects the
   guide's data folder as `data/`, the build in `src/build/`, and your own `vm-args.sh`.
 - `vm-args.sh`: the run arguments used here (real SEP; the file paths point at your own local files).
+
+## Root shell, internet, apt and app installs
+<img src="screenshots/hellolinux-running.png" width="260" align="right">
+
+- **Bootstrap:** the checkra1n core bootstrap (from the guide's Post-Setup page) was written onto the **System** volume from
+  Linux with linux-apfs-rw. **Data was never mounted.** Plain apfsck can't parse the real-SEP keybag (an `0xF8` entry), so it isn't
+  usable as a pass/fail check. The gate used instead: a full-check variant of apfsck had to report the **same complaint list
+  before and after**, and the other volumes had to stay byte-identical, with a qcow2 snapshot ready to roll back to. Boot with
+  `launchd_unsecure_cache=1` (the edited launchd.plist no longer matches its .sig).
+- **Shell:** `bash-5.0#` on the serial console (use a socket chardev so it accepts input). Run `mount -uw /` before installing anything.
+- **Reverse tethering**, entirely inside the companion VM: usbmuxd with `USBMUXD_DEFAULT_DEVICE_MODE=3`, a /24 on the
+  iPhone's USB-ethernet interface, dnsmasq for DHCP/DNS, and nftables masquerade out of the companion's uplink. Pair with
+  `idevicepair pair` and tap Trust.
+- **apt:** after the strap's `/usr/libexec/firmware.sh` and `dpkg --configure -a`, the strap vendor's repo works
+  (`apt install uikittools openssh`).
+- **Apps:** the kernel patches already bypass code signing, so a **fake-signed** app (`ldid -S -I<bundle id>`) copied into
+  `/Applications` and registered with `uicache -p` runs. `testapp/` is a tiny UIKit app written in C against the ObjC
+  runtime, built on Linux with clang + ld64.lld and hand-written `.tbd` stubs, so **no Apple SDK** is needed (`testapp/build.sh`).
+  `tools/install-app.sh` is the signing/serving/installing helper used here; it expects the local helper scripts
+  (`comp-run.sh`, `tools/ios-sh.sh`), so treat it as a reference. Only install self-built or open-source apps.

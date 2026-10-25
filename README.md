@@ -8,7 +8,7 @@ firmware, kernels, bootroms or disk images**: you fetch those yourself (see each
 |---|---|---|
 | [`ios12-xnu-qemu/`](ios12-xnu-qemu/) | iOS 12.1 on an emulated iPhone 6s Plus, using [alephsecurity/xnu-qemu-arm64](https://github.com/alephsecurity/xnu-qemu-arm64) | ✅ boots to a root shell; kernel console in a window; SSH from the host. No home screen (the fork has no display/GPU/touch emulation) |
 | [`ipod-touch-1g/`](ipod-touch-1g/) | iPhoneOS 1.0 on an emulated iPod touch 1G, using [devos50/qemu-ios](https://github.com/devos50/qemu-ios) | ✅ home screen, touch via mouse, apps run |
-| [`iphone11-qemuapplesilicon/`](iphone11-qemuapplesilicon/) | iOS 14 on an emulated iPhone 11, using [ChefKiss Inferno](https://github.com/ChefKissInc/Inferno) | ✅ home screen, touch, apps; app installing in progress |
+| [`iphone11-qemuapplesilicon/`](iphone11-qemuapplesilicon/) | iOS 14 on an emulated iPhone 11, using [ChefKiss Inferno](https://github.com/ChefKissInc/Inferno) | ✅ home screen, touch, root shell, internet, apt, self-built app installed |
 
 ## Linux-specific fixes in here
 - **xnu-qemu-arm64:** the guest-services socket layer assumed a macOS host (sockaddr layout, `O_NONBLOCK`
